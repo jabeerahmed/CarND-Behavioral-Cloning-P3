@@ -223,10 +223,10 @@ class Trainer(object):
 # Nvidia Trainer
 #==============================================================================
 
-from keras.layers import Conv2D, ELU, Dropout, Cropping2D, MaxPooling2D
+from keras.layers import Conv2D, ELU, Dropout, Cropping2D, MaxPooling2D, Convolution2D
 from keras.optimizers import Adam
 
-class NVidia(Trainer):    
+class NVidia1(Trainer):
     
     def __init__(self, db, rng=None, num_pcent=1.0, copy=False):
         self.X_train, self.y_train = CreateCenterOnly(db, rng=rng, num_pcent=num_pcent, copy=copy)
@@ -239,23 +239,25 @@ class NVidia(Trainer):
 
         # apply crop range
         model.add(Cropping2D(cropping=((top_crop, bot_crop), (0, 0)), input_shape=(160, 320, 3)))
+
         # Normalize
         model.add(Lambda(lambda x: x / 255.0 - 0.5))
 
         # Conv1
-        model.add(Conv2D(filters=24, kernel_size=5, strides=2, padding="valid"))
+        model.add(Conv2D(filters=12, kernel_size=5, strides=2, padding="valid"))
         model.add(ELU())
-        model.add(Dropout(.5))
+        # model.add(Dropout(.5))
 
         # Conv2
-        model.add(Conv2D(filters=36, kernel_size=5, strides=2, padding="valid"))
+        model.add(Conv2D(filters=13, kernel_size=5, strides=2, padding="valid"))
         model.add(ELU())
-        model.add(Dropout(.5))
+        # model.add(Dropout(.5))
 
-        # Conv3
-        model.add(Conv2D(filters=48, kernel_size=5, strides=2, padding="valid"))
-        model.add(ELU())
-        model.add(Dropout(.5))
+        # # Conv3
+        # model.add(Conv2D(filters=24, kernel_size=5, strides=2, padding="valid"))
+        # model.add(ELU())
+        # model.add(Dropout(.5))
+
         model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid'))
 
         model.add(Flatten())
@@ -276,9 +278,57 @@ class NVidia(Trainer):
 
         model.add(Dense(1))
 
-        adam = Adam(lr=0.0001)
+        adam = Adam(lr=0.001)
         model.compile(optimizer=adam, loss="mse", metrics=['accuracy'])
 
+        self.model = model
+        model.summary()
+
+
+class NVidia2(Trainer):
+    def __init__(self, db, rng=None, num_pcent=1.0, copy=False):
+        self.X_train, self.y_train = CreateCenterOnly(db, rng=rng, num_pcent=num_pcent, copy=copy)
+        self.params = DataBase.GetParams(db)
+
+        crop_h = self.params[CropRng] if (self.params is not None) and (CropRng in self.params) else (60, 140)
+        top_crop, bot_crop = crop_h[0], self.imshape[0] - crop_h[1]
+
+        model = Sequential()
+
+        # apply crop range
+        model.add(Cropping2D(cropping=((top_crop, bot_crop), (0, 0)), input_shape=(160, 320, 3)))
+        # Normalise the data
+        model.add(Lambda(lambda x: (x / 255.0) - 0.5))
+
+        # Conv layer 1
+        model.add(Convolution2D(16, 8, 8, subsample=(4, 4), border_mode="same"))
+        model.add(ELU())
+
+        # Conv layer 2
+        model.add(Convolution2D(32, 5, 5, subsample=(2, 2), border_mode="same"))
+        model.add(ELU())
+
+        # Conv layer 3
+        model.add(Convolution2D(64, 5, 5, subsample=(2, 2), border_mode="same"))
+
+        model.add(Flatten())
+        model.add(Dropout(.2))
+        model.add(ELU())
+
+        # Fully connected layer 1
+        model.add(Dense(512))
+        model.add(Dropout(.5))
+        model.add(ELU())
+
+        # Fully connected layer 2
+        model.add(Dense(50))
+        model.add(ELU())
+
+        model.add(Dense(1))
+
+        adam = Adam(lr=0.0001)
+
+        model.compile(optimizer=adam, loss="mse", metrics=['accuracy'])
         self.model = model
         model.summary()
 
