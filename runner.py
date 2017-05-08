@@ -113,7 +113,7 @@ class DataBase(DataFrame):
     
     
     def grab(self, boolarray, pcent=1.0):
-        boolarray = boolarray.copy()
+        boolarray = np.copy(np.array(boolarray))
         ba = np.argwhere(boolarray)
         notBa = boolarray == False
         n  = int(len(ba) * (1.0-pcent))
@@ -233,7 +233,7 @@ class NVidia(Trainer):
         self.params = DataBase.GetParams(db)
 
         model = Sequential()
-        
+
         # Crop 70 pixels from the top of the image and 25 from the bottom
         model.add(Cropping2D(cropping=((70, 25), (0, 0)),
                              dim_ordering='tf', # default

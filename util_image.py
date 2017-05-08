@@ -15,7 +15,7 @@ IsFlipped = 'IsFlipped'
 FlipImage = 'FlipImage'
 SideImage = 'SideImage'
 
-def AddFlippedImages(data):
+def AddFlippedImages(data, skip_range=(-0.2, 0.2)):
     def newname(oldname):
         dr = os.path.dirname(oldname)
         bn = os.path.basename(oldname)
@@ -28,13 +28,14 @@ def AddFlippedImages(data):
     rows = []
     for i, row in data.iterrows():
         if row.IsFlipped == False and row.FlipImage is None:
-            row.im_center = np.fliplr(row.im_center)
-            row.center    = newname(row.center)
-            row.steer     = -1*row.steer
-            row.IsFlipped = True
-            row.FlipImage = row.center            
-            data.loc[row.name, FlipImage] = row.center
-            rows.append(row)
+            if (skip_range[0] <= row.steer <= skip_range[1]):
+                row.im_center = np.fliplr(row.im_center)
+                row.center    = newname(row.center)
+                row.steer     = -1*row.steer
+                row.IsFlipped = True
+                row.FlipImage = row.center
+                data.loc[row.name, FlipImage] = row.center
+                rows.append(row)
 
     if len(rows)>0: 
         data2 = pd.DataFrame(rows, copy=True)
