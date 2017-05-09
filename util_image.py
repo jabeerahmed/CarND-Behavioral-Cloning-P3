@@ -21,14 +21,14 @@ def AddFlippedImages(data, skip_range=(-0.2, 0.2)):
         bn = os.path.basename(oldname)
         return os.path.join(dr, 'flipped_'+bn)
     
-    data = pd.DataFrame(data, copy=True)
+    data = type(data)(data, copy=True)
     if IsFlipped not in data: data[IsFlipped] = pd.Series([False]*len(data), index=data.index)
     if FlipImage not in data: data[FlipImage] = pd.Series([None ]*len(data), index=data.index)    
 
     rows = []
     for i, row in data.iterrows():
         if row.IsFlipped == False and row.FlipImage is None:
-            if (skip_range[0] <= row.steer <= skip_range[1]):
+            if (skip_range[0] < row.steer  < skip_range[1]) == False:
                 row.im_center = np.fliplr(row.im_center)
                 row.center    = newname(row.center)
                 row.steer     = -1*row.steer
@@ -63,7 +63,7 @@ def AddSideImage(data, left_steer=(0.2,0.05), right_steer=(-0.2,0.05), basedir=N
         row.steer = steer
         return row
 
-    data = pd.DataFrame(data, copy=True)
+    data = type(data)(data, copy=True)
     if SideImage not in data: data[SideImage] = pd.Series([False]*len(data), index=data.index)
 
     rows = []

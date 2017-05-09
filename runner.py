@@ -213,8 +213,8 @@ class Trainer(object):
     def imshape(self): return self.X_train[0].shape
 
 
-    def train(self, val_split=0.2, shuffle=True, epoch=2, verbose=0, path='model.h5', args={}):
-        res = self.model.fit(self.X_train, self.y_train, validation_split=val_split, shuffle=shuffle, nb_epoch=epoch, verbose=verbose, **args)
+    def train(self, val_split=0.2, shuffle=True, batch_size=256, epoch=2, verbose=1, path='model.h5', args={}):
+        res = self.model.fit(self.X_train, self.y_train, batch_size=batch_size, validation_split=val_split, shuffle=shuffle, nb_epoch=epoch, verbose=verbose, **args)
         self.model.save(path)
         return res
 
