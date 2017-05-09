@@ -46,6 +46,16 @@ def WriteCSVFile(db, newPath):
     db.to_csv(newPath, columns=cols, index=False, header=True, index_label=None)
     return tmpPath
     
+
+def FixMissingFiles(db, path):
+    rows = []
+    for i, row in recv.iterrows():
+        im = row.center
+        if not os.path.exists(os.path.join(path, im)): rows.append(i)
+
+    s = pd.Series(rows)
+    return db.drop(s)
+    
 #def write(db, cols=[]):db.to_csv('./test.csv', columns=cols, index=False, header=True, index_label=cols)
 #%%
 
@@ -115,6 +125,7 @@ def OrganizeNewDataSet(in_args):
     MoveDataToPath(path, new_dir)
     SetRelativePath([new_dir])
 
+#%%
 
 def main():
     cmds = {'setpath': SetPath, 'relpath': SetRelativePath, 'orgdata': OrganizeNewDataSet}

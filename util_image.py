@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 from skimage.color import rgb2gray
 from skimage import io
 import numpy as np
@@ -44,11 +43,11 @@ def AddFlippedImages(data, skip_range=(-0.2, 0.2)):
     return data
 
 
-def AddSideImage(data, left_steer=(0.2,0.05), right_steer=(-0.2,0.05), basedir=None):
+def AddSideImage(data, left_steer=(0.2, 0.9), right_steer=(-0.9, -0.2), basedir=None):
 
     if basedir is None:
         basedir = ''
-        if hasattr(data, 'params'): basedir = data.params('BaseDir')
+        if hasattr(data, 'params'): basedir = data.params['BaseDir']
 
     def newname(oldname):
         dr = os.path.dirname(oldname)
@@ -56,11 +55,18 @@ def AddSideImage(data, left_steer=(0.2,0.05), right_steer=(-0.2,0.05), basedir=N
         return os.path.join(dr, 'sideim_'+bn)
 
     def newrow(row, key, steer, bdir):
+        isLeft = row.center.find('mnter') != -1
+        steer_rng = np.array(left_steer if isLeft else right_steer)
+        mu = (steer_rng[1] + steer_rng[0])/2
+        sg = np.abs(steer_rng[1] - steer_rng[0])/4
+        
+        if not (steer_rng[0] < row.steer < steer_rng[1]): return None
+        
         row = pd.Series(row, copy=True)
         row.im_center = io.imread(os.path.join(bdir, row[key]))
         row[SideImage] = False
         row.center = newname(row[key])
-        row.steer = steer
+        row.steer = gauss(mu,sg)
         return row
 
     data = type(data)(data, copy=True)
@@ -71,8 +77,10 @@ def AddSideImage(data, left_steer=(0.2,0.05), right_steer=(-0.2,0.05), basedir=N
         notSide = row.center.find('sideim_') == -1
         if notSide and row[SideImage] == False:
             data.loc[row.name, SideImage] = True
-            rows.append(newrow(row, 'left', gauss(*left_steer), basedir))
-            rows.append(newrow(row, 'right',gauss(*right_steer), basedir))
+            row1 = newrow(row, 'left' , gauss(*left_steer), basedir)
+            row2 = newrow(row, 'right',gauss(*right_steer), basedir)
+            if row1 is not None: rows.append(row1)
+            if row2 is not None: rows.append(row2)
 
     if len(rows)>0: 
         data2 = pd.DataFrame(rows, copy=True)
@@ -81,5 +89,3 @@ def AddSideImage(data, left_steer=(0.2,0.05), right_steer=(-0.2,0.05), basedir=N
     return data
 
 #%%
-
-
